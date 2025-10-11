@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -63,27 +65,16 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     // Truck moves from left to right
-    _truckAnimation = Tween<double>(begin: -0.3, end: 1.1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
+    _truckAnimation = Tween<double>(
+      begin: -0.3,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     // Fade in/out effect
     _fadeAnimation = TweenSequence<double>([
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 0.0, end: 1.0),
-        weight: 30,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 1.0),
-        weight: 40,
-      ),
-      TweenSequenceItem(
-        tween: Tween<double>(begin: 1.0, end: 0.0),
-        weight: 30,
-      ),
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 1.0), weight: 30),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.0), weight: 40),
+      TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 0.0), weight: 30),
     ]).animate(_controller);
 
     _controller.forward();
@@ -197,9 +188,7 @@ class _SplashScreenState extends State<SplashScreen>
     return Container(
       width: 120,
       height: 60,
-      child: CustomPaint(
-        painter: TruckPainter(),
-      ),
+      child: CustomPaint(painter: TruckPainter()),
     );
   }
 }
@@ -208,57 +197,68 @@ class _SplashScreenState extends State<SplashScreen>
 class TruckPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.pinkAccent
-      ..style = PaintingStyle.fill;
+    final paint =
+        Paint()
+          ..color = Colors.pinkAccent
+          ..style = PaintingStyle.fill;
 
-    final outlinePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+    final outlinePaint =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
 
     // Truck body (cargo area)
     final cargoRect = RRect.fromRectAndRadius(
-      Rect.fromLTWH(size.width * 0.3, size.height * 0.2, size.width * 0.5,
-          size.height * 0.5),
+      Rect.fromLTWH(
+        size.width * 0.3,
+        size.height * 0.2,
+        size.width * 0.5,
+        size.height * 0.5,
+      ),
       const Radius.circular(4),
     );
     canvas.drawRRect(cargoRect, paint);
     canvas.drawRRect(cargoRect, outlinePaint);
 
     // Truck cabin
-    final cabinPath = Path()
-      ..moveTo(size.width * 0.15, size.height * 0.7)
-      ..lineTo(size.width * 0.15, size.height * 0.35)
-      ..lineTo(size.width * 0.25, size.height * 0.2)
-      ..lineTo(size.width * 0.35, size.height * 0.2)
-      ..lineTo(size.width * 0.35, size.height * 0.7)
-      ..close();
+    final cabinPath =
+        Path()
+          ..moveTo(size.width * 0.15, size.height * 0.7)
+          ..lineTo(size.width * 0.15, size.height * 0.35)
+          ..lineTo(size.width * 0.25, size.height * 0.2)
+          ..lineTo(size.width * 0.35, size.height * 0.2)
+          ..lineTo(size.width * 0.35, size.height * 0.7)
+          ..close();
     canvas.drawPath(cabinPath, paint);
     canvas.drawPath(cabinPath, outlinePaint);
 
     // Windshield
-    final windshieldPaint = Paint()
-      ..color = Colors.white.withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-    final windshield = Path()
-      ..moveTo(size.width * 0.18, size.height * 0.35)
-      ..lineTo(size.width * 0.23, size.height * 0.25)
-      ..lineTo(size.width * 0.32, size.height * 0.25)
-      ..lineTo(size.width * 0.32, size.height * 0.35)
-      ..close();
+    final windshieldPaint =
+        Paint()
+          ..color = Colors.white.withOpacity(0.7)
+          ..style = PaintingStyle.fill;
+    final windshield =
+        Path()
+          ..moveTo(size.width * 0.18, size.height * 0.35)
+          ..lineTo(size.width * 0.23, size.height * 0.25)
+          ..lineTo(size.width * 0.32, size.height * 0.25)
+          ..lineTo(size.width * 0.32, size.height * 0.35)
+          ..close();
     canvas.drawPath(windshield, windshieldPaint);
     canvas.drawPath(windshield, outlinePaint);
 
     // Wheels
-    final wheelPaint = Paint()
-      ..color = Colors.grey[900]!
-      ..style = PaintingStyle.fill;
+    final wheelPaint =
+        Paint()
+          ..color = Colors.grey[900]!
+          ..style = PaintingStyle.fill;
 
-    final wheelOutlinePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
+    final wheelOutlinePaint =
+        Paint()
+          ..color = Colors.white
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
 
     // Front wheel
     canvas.drawCircle(
@@ -285,9 +285,10 @@ class TruckPainter extends CustomPainter {
     );
 
     // Wheel details (rims)
-    final rimPaint = Paint()
-      ..color = Colors.pinkAccent
-      ..style = PaintingStyle.fill;
+    final rimPaint =
+        Paint()
+          ..color = Colors.pinkAccent
+          ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
       Offset(size.width * 0.25, size.height * 0.8),
@@ -301,9 +302,10 @@ class TruckPainter extends CustomPainter {
     );
 
     // Headlights
-    final headlightPaint = Paint()
-      ..color = Colors.yellow
-      ..style = PaintingStyle.fill;
+    final headlightPaint =
+        Paint()
+          ..color = Colors.yellow
+          ..style = PaintingStyle.fill;
 
     canvas.drawCircle(
       Offset(size.width * 0.15, size.height * 0.6),
@@ -584,15 +586,39 @@ class _MainScreenState extends State<MainScreen> {
                         : null,
                 initialSettings: InAppWebViewSettings(
                   javaScriptEnabled: true,
+                  javaScriptCanOpenWindowsAutomatically: true,
                   supportZoom: true,
                   useShouldOverrideUrlLoading: true,
                   allowFileAccess: true,
+                  allowFileAccessFromFileURLs: true,
+                  allowUniversalAccessFromFileURLs: true,
                   domStorageEnabled: true,
+                  databaseEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
                   allowsInlineMediaPlayback: true,
                   useHybridComposition: true,
                   minimumFontSize: 12,
                   initialScale: 1,
+                  // Enhanced settings for better interaction
+                  disableHorizontalScroll: false,
+                  disableVerticalScroll: false,
+                  verticalScrollBarEnabled: true,
+                  horizontalScrollBarEnabled: true,
+                  // Improve touch handling
+                  supportMultipleWindows: true,
+                  // Cache settings
+                  cacheEnabled: true,
+                  // Allow content access
+                  allowContentAccess: true,
+                  // Improve rendering
+                  hardwareAcceleration: true,
+                  // Better compatibility
+                  mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                  // User agent
+                  userAgent:
+                      Platform.isAndroid
+                          ? 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36'
+                          : null,
                 ),
                 onWebViewCreated: (controller) {
                   _webViewController = controller;
@@ -639,6 +665,73 @@ class _MainScreenState extends State<MainScreen> {
                   if (Platform.isAndroid || Platform.isIOS) {
                     _pullToRefreshController?.endRefreshing();
                   }
+
+                  // Inject JavaScript to improve button responsiveness
+                  await controller.evaluateJavascript(
+                    source: """
+                    (function() {
+                      // Remove any touch delay
+                      document.addEventListener('touchstart', function(){}, {passive: true});
+                      
+                      // Ensure all buttons and clickable elements are accessible
+                      var style = document.createElement('style');
+                      style.innerHTML = `
+                        * {
+                          -webkit-tap-highlight-color: rgba(0,0,0,0);
+                          -webkit-touch-callout: none;
+                        }
+                        button, a, [role="button"], [onclick] {
+                          cursor: pointer !important;
+                          pointer-events: auto !important;
+                          touch-action: manipulation !important;
+                        }
+                      `;
+                      document.head.appendChild(style);
+                      
+                      // Handle window.open() calls (for View Detail, View PDF buttons)
+                      var originalWindowOpen = window.open;
+                      window.open = function(url, name, specs) {
+                        console.log('JBRC WebView: window.open intercepted - URL:', url);
+                        
+                        // If it's a same-origin URL, navigate in current window
+                        if (url && url.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                          window.location.href = url;
+                          return window;
+                        }
+                        
+                        // Otherwise, call original window.open
+                        return originalWindowOpen.call(this, url, name, specs);
+                      };
+                      
+                      // Handle target="_blank" links
+                      document.addEventListener('click', function(e) {
+                        var target = e.target;
+                        while (target && target.tagName !== 'A') {
+                          target = target.parentElement;
+                        }
+                        
+                        if (target && target.tagName === 'A' && target.target === '_blank') {
+                          var href = target.href;
+                          console.log('JBRC WebView: _blank link clicked:', href);
+                          
+                          // If it's a same-origin link, prevent default and navigate
+                          if (href && href.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                            e.preventDefault();
+                            window.location.href = href;
+                          }
+                        }
+                      }, true);
+                      
+                      console.log('JBRC WebView: Enhanced touch handling loaded');
+                    })();
+                  """,
+                  );
+                },
+                onConsoleMessage: (controller, consoleMessage) {
+                  // Log console messages for debugging
+                  debugPrint(
+                    'WebView Console [${consoleMessage.messageLevel}]: ${consoleMessage.message}',
+                  );
                 },
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
                   final uri = navigationAction.request.url;
@@ -728,7 +821,84 @@ class _MainScreenState extends State<MainScreen> {
                 onDownloadStartRequest: (controller, downloadRequest) async {
                   await _handleDownload(downloadRequest);
                 },
+                onLoadError: (controller, url, code, message) {
+                  debugPrint('WebView Load Error: $code - $message at $url');
+                },
+                onLoadHttpError: (controller, url, statusCode, description) {
+                  debugPrint(
+                    'WebView HTTP Error: $statusCode - $description at $url',
+                  );
+                },
+                onReceivedHttpAuthRequest: (controller, challenge) async {
+                  return HttpAuthResponse(
+                    username: '',
+                    password: '',
+                    action: HttpAuthResponseAction.CANCEL,
+                  );
+                },
+                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                  Factory<VerticalDragGestureRecognizer>(
+                    () => VerticalDragGestureRecognizer(),
+                  ),
+                  Factory<HorizontalDragGestureRecognizer>(
+                    () => HorizontalDragGestureRecognizer(),
+                  ),
+                  Factory<TapGestureRecognizer>(() => TapGestureRecognizer()),
+                  Factory<LongPressGestureRecognizer>(
+                    () => LongPressGestureRecognizer(),
+                  ),
+                },
                 onCreateWindow: (controller, createWindowAction) async {
+                  // Handle popup windows (like View Detail, View PDF buttons)
+                  final url = createWindowAction.request.url;
+
+                  if (url != null) {
+                    final urlString = url.toString();
+                    debugPrint('Opening new window: $urlString');
+
+                    // Check if it's a PDF or document
+                    if (urlString.contains('.pdf') ||
+                        urlString.contains('pdf') ||
+                        urlString.contains('download')) {
+                      // Trigger download for PDFs
+                      try {
+                        await _handleDownload(
+                          DownloadStartRequest(
+                            url: url,
+                            suggestedFilename:
+                                urlString.split('/').last.split('?').first,
+                            contentLength: 0,
+                          ),
+                        );
+                      } catch (e) {
+                        debugPrint('Download error: $e');
+                      }
+                      return true;
+                    }
+
+                    // For other popups (View Detail, etc.), open in the same webview
+                    if (urlString.contains('jodhpurbombay.vercel.app')) {
+                      // Load in the same webview
+                      await controller.loadUrl(
+                        urlRequest: URLRequest(url: url),
+                      );
+                      return true;
+                    } else {
+                      // External links - open in browser
+                      try {
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(
+                            url,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint('Error opening URL: $e');
+                      }
+                      return true;
+                    }
+                  }
+
                   return true;
                 },
               ),
@@ -971,9 +1141,10 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _handleDownload(DownloadStartRequest downloadRequest) async {
     try {
       final url = downloadRequest.url.toString();
-      final suggestedFilename = downloadRequest.suggestedFilename ?? 
+      final suggestedFilename =
+          downloadRequest.suggestedFilename ??
           url.split('/').last.split('?').first;
-      
+
       debugPrint('Download started: $url');
       debugPrint('Suggested filename: $suggestedFilename');
 
@@ -1006,7 +1177,8 @@ class _MainScreenState extends State<MainScreen> {
         if (Platform.isAndroid) {
           final status = await Permission.storage.request();
           if (!status.isGranted) {
-            final manageStatus = await Permission.manageExternalStorage.request();
+            final manageStatus =
+                await Permission.manageExternalStorage.request();
             if (!manageStatus.isGranted) {
               _showError('Storage permission denied. Cannot download file.');
               return;
@@ -1034,7 +1206,7 @@ class _MainScreenState extends State<MainScreen> {
 
           if (mounted) {
             _showSuccess('File downloaded successfully!');
-            
+
             // Try to open the file
             try {
               await OpenFile.open(filePath);
@@ -1051,17 +1223,17 @@ class _MainScreenState extends State<MainScreen> {
         // Use file selector to choose save location
         final fileName = suggestedFilename;
         final savePath = await getSavePath(suggestedName: fileName);
-        
+
         if (savePath != null) {
           final file = File(savePath);
-          
+
           // Download the file
           final response = await http.get(Uri.parse(url));
           await file.writeAsBytes(response.bodyBytes);
 
           if (mounted) {
             _showSuccess('File saved successfully!');
-            
+
             // Try to open the file
             try {
               await OpenFile.open(savePath);
