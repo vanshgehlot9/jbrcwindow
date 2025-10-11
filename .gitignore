@@ -1,0 +1,38 @@
+# Flutter/Dart
+.dart_tool/
+build/
+.packages
+.pub/
+.pub-cache/
+**/GeneratedPluginRegistrant.*
+
+# Android
+**/local.properties
+**/.gradle
+**/gradle-app.setting
+
+# iOS
+ios/Pods/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+*.xcworkspace
+ios/Runner/GeneratedPluginRegistrant.*
+
+# macOS
+macos/Pods/
+macos/Flutter/Flutter.framework
+
+# VSCode
+.vscode/
+
+# IntelliJ
+*.iml
+.idea/
+
+# macOS files
+.DS_Store
+
+# build outputs
+**/outputs/
+**/intermediates/
+**/tmp/

@@ -1,0 +1,96 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.jbrc">
+    <!-- Core permissions -->
+    <uses-permission
+        android:name="android.permission.INTERNET"/>
+    <uses-permission
+        android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission
+        android:name="android.permission.CAMERA"/>
+    <!-- Storage (scoped for modern Android); keep legacy WRITE only up to 28 -->
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission
+        android:name="android.permission.READ_MEDIA_VIDEO"/>
+    <!-- MANAGE_EXTERNAL_STORAGE is special/restricted; only keep if you truly need All files access -->
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <!-- Contacts only if you really use it -->
+    <uses-permission
+        android:name="android.permission.READ_CONTACTS"/>
+    <!-- Android 13+ notifications runtime permission -->
+    <uses-permission
+        android:name="android.permission.POST_NOTIFICATIONS"
+        tools:targetApi="33"/>
+    <queries>
+        <intent>
+            <action
+                android:name="android.intent.action.OPEN_DOCUMENT"/>
+            <category
+                android:name="android.intent.category.OPENABLE"/>
+            <data
+                android:mimeType="*/*"/>
+        </intent>
+        <intent>
+            <action
+                android:name="android.intent.action.GET_CONTENT"/>
+            <category
+                android:name="android.intent.category.OPENABLE"/>
+            <data
+                android:mimeType="*/*"/>
+        </intent>
+        <intent>
+            <action
+                android:name="android.media.action.IMAGE_CAPTURE"/>
+        </intent>
+    </queries>
+    <application
+        android:label="JBRC"
+        android:icon="@mipmap/ic_launcher">
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2"/>
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false"/>
+        <!-- Recommended: default FCM channel/icon for system notifications in background -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="high_importance"/>
+        <!-- (Optional) default icon & color for system notifications -->
+        <!-- <meta-data android:name="com.google.firebase.messaging.default_notification_icon" android:resource="@drawable/ic_stat_notification" /> -->
+        <!-- <meta-data android:name="com.google.firebase.messaging.default_notification_color" android:resource="@color/pinkAccent" /> -->
+        <!-- FileProvider: authority must match manifest package + ".fileprovider" -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.jbrc.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"/>
+        </provider>
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|screenSize|keyboard|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+                android:name="io.flutter.embedding.android.NormalTheme"
+                android:resource="@style/NormalTheme"/>
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "840939383086",
+    "project_id": "fusion-iot-bdfcf",
+    "storage_bucket": "fusion-iot-bdfcf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:840939383086:android:914a27e7d4e7c9052632bf",
+        "android_client_info": {
+          "package_name": "com.jbrc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDf7nJ2EOtlhSxo7ESD9gmGTLCzBTkpfwY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:840939383086:android:07fe66b34247c3252632bf",
+        "android_client_info": {
+          "package_name": "com.jbrc"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDf7nJ2EOtlhSxo7ESD9gmGTLCzBTkpfwY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
