@@ -7,6 +7,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_selector/file_selector.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:open_file/open_file.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,11 +47,48 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _truckAnimation;
+  late Animation<double> _fadeAnimation;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
+
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
+
+    // Truck moves from left to right
+    _truckAnimation = Tween<double>(begin: -0.3, end: 1.1).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeInOut,
+      ),
+    );
+
+    // Fade in/out effect
+    _fadeAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 0.0, end: 1.0),
+        weight: 30,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.0),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 0.0),
+        weight: 30,
+      ),
+    ]).animate(_controller);
+
+    _controller.forward();
+
+    Future.delayed(const Duration(milliseconds: 2200), () {
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -59,38 +99,221 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(
-        child: Container(
-          width: 130,
-          height: 130,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.pinkAccent, width: 6),
-            color: Colors.white,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(6.0),
-            child: ClipOval(
-              child: Image.asset(
-                'assets/logo.jpeg',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.image_not_supported,
-                    size: 50,
-                    color: Colors.grey,
-                  );
-                },
+      body: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          return Stack(
+            children: [
+              // Road/background effect
+              Positioned(
+                bottom: MediaQuery.of(context).size.height * 0.4,
+                left: 0,
+                right: 0,
+                child: Opacity(
+                  opacity: _fadeAnimation.value * 0.3,
+                  child: Container(
+                    height: 4,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.transparent,
+                          Colors.pinkAccent.withOpacity(0.5),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
-        ),
+
+              // Animated truck
+              Positioned(
+                left: screenWidth * _truckAnimation.value,
+                top: MediaQuery.of(context).size.height * 0.35,
+                child: Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Transform.scale(
+                    scale: 1.0 + (_truckAnimation.value * 0.2),
+                    child: _buildTruck(),
+                  ),
+                ),
+              ),
+
+              // Company name or title
+              Center(
+                child: Opacity(
+                  opacity: _fadeAnimation.value,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 200),
+                      Text(
+                        'JBRC',
+                        style: TextStyle(
+                          color: Colors.pinkAccent,
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 8,
+                          shadows: [
+                            Shadow(
+                              color: Colors.pinkAccent.withOpacity(0.5),
+                              blurRadius: 20,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Transport Management',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 16,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
+
+  Widget _buildTruck() {
+    return Container(
+      width: 120,
+      height: 60,
+      child: CustomPaint(
+        painter: TruckPainter(),
+      ),
+    );
+  }
+}
+
+// Custom painter for the truck
+class TruckPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.pinkAccent
+      ..style = PaintingStyle.fill;
+
+    final outlinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Truck body (cargo area)
+    final cargoRect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(size.width * 0.3, size.height * 0.2, size.width * 0.5,
+          size.height * 0.5),
+      const Radius.circular(4),
+    );
+    canvas.drawRRect(cargoRect, paint);
+    canvas.drawRRect(cargoRect, outlinePaint);
+
+    // Truck cabin
+    final cabinPath = Path()
+      ..moveTo(size.width * 0.15, size.height * 0.7)
+      ..lineTo(size.width * 0.15, size.height * 0.35)
+      ..lineTo(size.width * 0.25, size.height * 0.2)
+      ..lineTo(size.width * 0.35, size.height * 0.2)
+      ..lineTo(size.width * 0.35, size.height * 0.7)
+      ..close();
+    canvas.drawPath(cabinPath, paint);
+    canvas.drawPath(cabinPath, outlinePaint);
+
+    // Windshield
+    final windshieldPaint = Paint()
+      ..color = Colors.white.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+    final windshield = Path()
+      ..moveTo(size.width * 0.18, size.height * 0.35)
+      ..lineTo(size.width * 0.23, size.height * 0.25)
+      ..lineTo(size.width * 0.32, size.height * 0.25)
+      ..lineTo(size.width * 0.32, size.height * 0.35)
+      ..close();
+    canvas.drawPath(windshield, windshieldPaint);
+    canvas.drawPath(windshield, outlinePaint);
+
+    // Wheels
+    final wheelPaint = Paint()
+      ..color = Colors.grey[900]!
+      ..style = PaintingStyle.fill;
+
+    final wheelOutlinePaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+
+    // Front wheel
+    canvas.drawCircle(
+      Offset(size.width * 0.25, size.height * 0.8),
+      size.width * 0.08,
+      wheelPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.25, size.height * 0.8),
+      size.width * 0.08,
+      wheelOutlinePaint,
+    );
+
+    // Back wheel
+    canvas.drawCircle(
+      Offset(size.width * 0.65, size.height * 0.8),
+      size.width * 0.08,
+      wheelPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.65, size.height * 0.8),
+      size.width * 0.08,
+      wheelOutlinePaint,
+    );
+
+    // Wheel details (rims)
+    final rimPaint = Paint()
+      ..color = Colors.pinkAccent
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(size.width * 0.25, size.height * 0.8),
+      size.width * 0.04,
+      rimPaint,
+    );
+    canvas.drawCircle(
+      Offset(size.width * 0.65, size.height * 0.8),
+      size.width * 0.04,
+      rimPaint,
+    );
+
+    // Headlights
+    final headlightPaint = Paint()
+      ..color = Colors.yellow
+      ..style = PaintingStyle.fill;
+
+    canvas.drawCircle(
+      Offset(size.width * 0.15, size.height * 0.6),
+      size.width * 0.025,
+      headlightPaint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class MainScreen extends StatefulWidget {
@@ -502,6 +725,9 @@ class _MainScreenState extends State<MainScreen> {
                     action: PermissionResponseAction.GRANT,
                   );
                 },
+                onDownloadStartRequest: (controller, downloadRequest) async {
+                  await _handleDownload(downloadRequest);
+                },
                 onCreateWindow: (controller, createWindowAction) async {
                   return true;
                 },
@@ -721,6 +947,142 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
     );
+  }
+
+  void _showSuccess(String message) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'OPEN',
+          textColor: Colors.white,
+          onPressed: () async {
+            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDownload(DownloadStartRequest downloadRequest) async {
+    try {
+      final url = downloadRequest.url.toString();
+      final suggestedFilename = downloadRequest.suggestedFilename ?? 
+          url.split('/').last.split('?').first;
+      
+      debugPrint('Download started: $url');
+      debugPrint('Suggested filename: $suggestedFilename');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Downloading file...'),
+              ],
+            ),
+            backgroundColor: Colors.pinkAccent,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // For mobile platforms (Android/iOS)
+      if (Platform.isAndroid || Platform.isIOS) {
+        // Request storage permission
+        if (Platform.isAndroid) {
+          final status = await Permission.storage.request();
+          if (!status.isGranted) {
+            final manageStatus = await Permission.manageExternalStorage.request();
+            if (!manageStatus.isGranted) {
+              _showError('Storage permission denied. Cannot download file.');
+              return;
+            }
+          }
+        }
+
+        Directory? directory;
+        if (Platform.isAndroid) {
+          directory = await getExternalStorageDirectory();
+          // Save to Downloads folder on Android
+          final downloadsPath = '/storage/emulated/0/Download';
+          directory = Directory(downloadsPath);
+        } else if (Platform.isIOS) {
+          directory = await getApplicationDocumentsDirectory();
+        }
+
+        if (directory != null) {
+          final filePath = '${directory.path}/$suggestedFilename';
+          final file = File(filePath);
+
+          // Download the file
+          final response = await http.get(Uri.parse(url));
+          await file.writeAsBytes(response.bodyBytes);
+
+          if (mounted) {
+            _showSuccess('File downloaded successfully!');
+            
+            // Try to open the file
+            try {
+              await OpenFile.open(filePath);
+            } catch (e) {
+              debugPrint('Could not open file: $e');
+            }
+          }
+
+          debugPrint('File saved to: $filePath');
+        }
+      }
+      // For desktop platforms (Windows, macOS, Linux)
+      else {
+        // Use file selector to choose save location
+        final fileName = suggestedFilename;
+        final savePath = await getSavePath(suggestedName: fileName);
+        
+        if (savePath != null) {
+          final file = File(savePath);
+          
+          // Download the file
+          final response = await http.get(Uri.parse(url));
+          await file.writeAsBytes(response.bodyBytes);
+
+          if (mounted) {
+            _showSuccess('File saved successfully!');
+            
+            // Try to open the file
+            try {
+              await OpenFile.open(savePath);
+            } catch (e) {
+              debugPrint('Could not open file: $e');
+            }
+          }
+
+          debugPrint('File saved to: $savePath');
+        } else {
+          if (mounted) {
+            _showError('Download cancelled');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Download error: $e');
+      if (mounted) {
+        _showError('Download failed: ${e.toString()}');
+      }
+    }
   }
 
   @override
