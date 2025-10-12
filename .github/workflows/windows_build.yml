@@ -1,4 +1,5 @@
 name: Build Windows App
+
 on:
   workflow_dispatch:
   push:
@@ -7,6 +8,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -19,14 +21,27 @@ jobs:
       - name: Enable Windows Desktop
         run: flutter config --enable-windows-desktop
 
+      - name: Clean old build cache
+        run: flutter clean
+
       - name: Install Dependencies
         run: flutter pub get
 
       - name: Build Windows Release
         run: flutter build windows --release
 
+      - name: Copy VC Runtime DLLs (for compatibility)
+        run: |
+          xcopy "C:\Windows\System32\msvcp140.dll" "build/windows/x64/runner/Release/" /Y
+          xcopy "C:\Windows\System32\vcruntime140.dll" "build/windows/x64/runner/Release/" /Y
+
+      - name: Zip Windows Build
+        run: |
+          cd build/windows/x64/runner/Release
+          powershell Compress-Archive -Path * -DestinationPath ../../../jbrc_windows_build.zip
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: jbrc-windows
-          path: build/windows/x64/runner/Release/
+          path: build/windows/x64/jbrc_windows_build.zip
