@@ -31,14 +31,16 @@ jobs:
         run: flutter build windows --release
 
       - name: Copy VC Runtime DLLs (for compatibility)
+        shell: pwsh
         run: |
-          xcopy "C:\Windows\System32\msvcp140.dll" "build/windows/x64/runner/Release/" /Y
-          xcopy "C:\Windows\System32\vcruntime140.dll" "build/windows/x64/runner/Release/" /Y
+          Copy-Item "C:\Windows\System32\msvcp140.dll" "build/windows/x64/runner/Release\" -Force
+          Copy-Item "C:\Windows\System32\vcruntime140.dll" "build/windows/x64/runner/Release\" -Force
 
       - name: Zip Windows Build
+        shell: pwsh
         run: |
           cd build/windows/x64/runner/Release
-          powershell Compress-Archive -Path * -DestinationPath ../../../jbrc_windows_build.zip
+          Compress-Archive -Path * -DestinationPath ../../../jbrc_windows_build.zip -Force
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
