@@ -819,7 +819,15 @@ class _MainScreenState extends State<MainScreen> {
                   );
                 },
                 onDownloadStartRequest: (controller, downloadRequest) async {
-                  await _handleDownload(downloadRequest);
+                  final url = downloadRequest.url.toString();
+
+                  // If it's a PDF, open it for viewing/printing instead of downloading
+                  if (url.contains('.pdf') || url.contains('pdf')) {
+                    await _openPdfForPrint(url);
+                  } else {
+                    // For non-PDF files, download as usual
+                    await _handleDownload(downloadRequest);
+                  }
                 },
                 onLoadError: (controller, url, code, message) {
                   debugPrint('WebView Load Error: $code - $message at $url');
@@ -856,11 +864,22 @@ class _MainScreenState extends State<MainScreen> {
                     final urlString = url.toString();
                     debugPrint('Opening new window: $urlString');
 
-                    // Check if it's a PDF or document
+                    // Check if it's a PDF - open it for viewing/printing instead of downloading
                     if (urlString.contains('.pdf') ||
-                        urlString.contains('pdf') ||
-                        urlString.contains('download')) {
-                      // Trigger download for PDFs
+                        urlString.contains('pdf')) {
+                      // Open PDF in a viewer with print option
+                      try {
+                        await _openPdfForPrint(urlString);
+                      } catch (e) {
+                        debugPrint('PDF open error: $e');
+                      }
+                      return true;
+                    }
+
+                    // Check if it's a download (not PDF)
+                    if (urlString.contains('download') &&
+                        !urlString.contains('pdf')) {
+                      // Trigger download for non-PDF files
                       try {
                         await _handleDownload(
                           DownloadStartRequest(
@@ -1253,6 +1272,109 @@ class _MainScreenState extends State<MainScreen> {
       debugPrint('Download error: $e');
       if (mounted) {
         _showError('Download failed: ${e.toString()}');
+      }
+    }
+  }
+
+  Future<void> _openPdfForPrint(String pdfUrl) async {
+    try {
+      debugPrint('Opening PDF for print: $pdfUrl');
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Opening PDF...'),
+              ],
+            ),
+            backgroundColor: Colors.pinkAccent,
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // For mobile and desktop - open PDF in external viewer with print capability
+      final pdfUri = Uri.parse(pdfUrl);
+
+      if (await canLaunchUrl(pdfUri)) {
+        // Launch in external application (default PDF viewer)
+        // This allows users to print directly from the PDF viewer
+        await launchUrl(pdfUri, mode: LaunchMode.externalApplication);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('PDF opened! Use your PDF viewer to print.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      } else {
+        // Fallback: Download and open
+        debugPrint('Cannot launch URL, falling back to download');
+
+        // Download the PDF first
+        final response = await http.get(pdfUri);
+        final bytes = response.bodyBytes;
+
+        // Get temporary directory
+        Directory? directory;
+        if (Platform.isAndroid || Platform.isIOS) {
+          if (Platform.isAndroid) {
+            directory = await getExternalStorageDirectory();
+            final downloadsPath = '/storage/emulated/0/Download';
+            directory = Directory(downloadsPath);
+          } else {
+            directory = await getApplicationDocumentsDirectory();
+          }
+        } else {
+          directory = await getTemporaryDirectory();
+        }
+
+        if (directory != null) {
+          final fileName = pdfUrl.split('/').last.split('?').first;
+          final filePath = '${directory.path}/$fileName';
+          final file = File(filePath);
+
+          await file.writeAsBytes(bytes);
+
+          // Open the PDF file
+          final result = await OpenFile.open(filePath);
+
+          if (mounted) {
+            if (result.type == ResultType.done) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'PDF opened! Use print option in your PDF viewer.',
+                  ),
+                  backgroundColor: Colors.green,
+                  duration: Duration(seconds: 3),
+                ),
+              );
+            } else {
+              _showError('Could not open PDF. File saved to: $filePath');
+            }
+          }
+
+          debugPrint('PDF saved and opened: $filePath');
+        }
+      }
+    } catch (e) {
+      debugPrint('Error opening PDF: $e');
+      if (mounted) {
+        _showError('Failed to open PDF: ${e.toString()}');
       }
     }
   }
