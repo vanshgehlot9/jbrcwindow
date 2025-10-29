@@ -596,7 +596,7 @@ class _MainScreenState extends State<MainScreen> {
                   databaseEnabled: true,
                   mediaPlaybackRequiresUserGesture: false,
                   allowsInlineMediaPlayback: true,
-                  useHybridComposition: true,
+                  useHybridComposition: Platform.isAndroid || Platform.isIOS,
                   minimumFontSize: 12,
                   initialScale: 1,
                   // Enhanced settings for better interaction
@@ -606,18 +606,28 @@ class _MainScreenState extends State<MainScreen> {
                   horizontalScrollBarEnabled: true,
                   // Improve touch handling
                   supportMultipleWindows: true,
-                  // Cache settings
+                  // Cache settings - aggressive caching for better performance
                   cacheEnabled: true,
+                  cacheMode: CacheMode.LOAD_CACHE_ELSE_NETWORK,
                   // Allow content access
                   allowContentAccess: true,
-                  // Improve rendering
+                  // Improve rendering - critical for Windows performance
                   hardwareAcceleration: true,
                   // Better compatibility
                   mixedContentMode: MixedContentMode.MIXED_CONTENT_ALWAYS_ALLOW,
+                  // Disable unnecessary features for better performance
+                  disableContextMenu:
+                      Platform.isWindows ||
+                      Platform.isMacOS ||
+                      Platform.isLinux,
+                  // Reduce animations on desktop for smoother performance
+                  transparentBackground: false,
                   // User agent
                   userAgent:
                       Platform.isAndroid
                           ? 'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Mobile Safari/537.36'
+                          : Platform.isWindows
+                          ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
                           : null,
                 ),
                 onWebViewCreated: (controller) {
@@ -667,71 +677,122 @@ class _MainScreenState extends State<MainScreen> {
                   }
 
                   // Inject JavaScript to improve button responsiveness
-                  await controller.evaluateJavascript(
-                    source: """
-                    (function() {
-                      // Remove any touch delay
-                      document.addEventListener('touchstart', function(){}, {passive: true});
-                      
-                      // Ensure all buttons and clickable elements are accessible
-                      var style = document.createElement('style');
-                      style.innerHTML = `
-                        * {
-                          -webkit-tap-highlight-color: rgba(0,0,0,0);
-                          -webkit-touch-callout: none;
-                        }
-                        button, a, [role="button"], [onclick] {
-                          cursor: pointer !important;
-                          pointer-events: auto !important;
-                          touch-action: manipulation !important;
-                        }
-                      `;
-                      document.head.appendChild(style);
-                      
-                      // Handle window.open() calls (for View Detail, View PDF buttons)
-                      var originalWindowOpen = window.open;
-                      window.open = function(url, name, specs) {
-                        console.log('JBRC WebView: window.open intercepted - URL:', url);
-                        
-                        // If it's a same-origin URL, navigate in current window
-                        if (url && url.indexOf('jodhpurbombay.vercel.app') !== -1) {
-                          window.location.href = url;
-                          return window;
-                        }
-                        
-                        // Otherwise, call original window.open
-                        return originalWindowOpen.call(this, url, name, specs);
-                      };
-                      
-                      // Handle target="_blank" links
-                      document.addEventListener('click', function(e) {
-                        var target = e.target;
-                        while (target && target.tagName !== 'A') {
-                          target = target.parentElement;
-                        }
-                        
-                        if (target && target.tagName === 'A' && target.target === '_blank') {
-                          var href = target.href;
-                          console.log('JBRC WebView: _blank link clicked:', href);
-                          
-                          // If it's a same-origin link, prevent default and navigate
-                          if (href && href.indexOf('jodhpurbombay.vercel.app') !== -1) {
-                            e.preventDefault();
-                            window.location.href = href;
+                  // Lighter version for desktop to reduce lag
+                  final isDesktop =
+                      Platform.isWindows ||
+                      Platform.isMacOS ||
+                      Platform.isLinux;
+
+                  if (isDesktop) {
+                    // Minimal JavaScript for desktop - better performance
+                    await controller.evaluateJavascript(
+                      source: """
+                      (function() {
+                        // Handle window.open() calls (for View Detail, View PDF buttons)
+                        var originalWindowOpen = window.open;
+                        window.open = function(url, name, specs) {
+                          if (url && url.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                            window.location.href = url;
+                            return window;
                           }
-                        }
-                      }, true);
-                      
-                      console.log('JBRC WebView: Enhanced touch handling loaded');
-                    })();
-                  """,
-                  );
+                          return originalWindowOpen.call(this, url, name, specs);
+                        };
+                        
+                        // Handle target="_blank" links
+                        document.addEventListener('click', function(e) {
+                          var target = e.target;
+                          while (target && target.tagName !== 'A') {
+                            target = target.parentElement;
+                          }
+                          if (target && target.tagName === 'A' && target.target === '_blank') {
+                            var href = target.href;
+                            if (href && href.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                              e.preventDefault();
+                              window.location.href = href;
+                            }
+                          }
+                        }, true);
+                        
+                        console.log('JBRC WebView: Desktop optimizations loaded');
+                      })();
+                    """,
+                    );
+                  } else {
+                    // Full JavaScript for mobile - includes touch optimizations
+                    await controller.evaluateJavascript(
+                      source: """
+                      (function() {
+                        // Remove any touch delay
+                        document.addEventListener('touchstart', function(){}, {passive: true});
+                        
+                        // Ensure all buttons and clickable elements are accessible
+                        var style = document.createElement('style');
+                        style.innerHTML = `
+                          * {
+                            -webkit-tap-highlight-color: rgba(0,0,0,0);
+                            -webkit-touch-callout: none;
+                          }
+                          button, a, [role="button"], [onclick] {
+                            cursor: pointer !important;
+                            pointer-events: auto !important;
+                            touch-action: manipulation !important;
+                          }
+                        `;
+                        document.head.appendChild(style);
+                        
+                        // Handle window.open() calls (for View Detail, View PDF buttons)
+                        var originalWindowOpen = window.open;
+                        window.open = function(url, name, specs) {
+                          console.log('JBRC WebView: window.open intercepted - URL:', url);
+                          
+                          // If it's a same-origin URL, navigate in current window
+                          if (url && url.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                            window.location.href = url;
+                            return window;
+                          }
+                          
+                          // Otherwise, call original window.open
+                          return originalWindowOpen.call(this, url, name, specs);
+                        };
+                        
+                        // Handle target="_blank" links
+                        document.addEventListener('click', function(e) {
+                          var target = e.target;
+                          while (target && target.tagName !== 'A') {
+                            target = target.parentElement;
+                          }
+                          
+                          if (target && target.tagName === 'A' && target.target === '_blank') {
+                            var href = target.href;
+                            console.log('JBRC WebView: _blank link clicked:', href);
+                            
+                            // If it's a same-origin link, prevent default and navigate
+                            if (href && href.indexOf('jodhpurbombay.vercel.app') !== -1) {
+                              e.preventDefault();
+                              window.location.href = href;
+                            }
+                          }
+                        }, true);
+                        
+                        console.log('JBRC WebView: Enhanced touch handling loaded');
+                      })();
+                    """,
+                    );
+                  }
                 },
                 onConsoleMessage: (controller, consoleMessage) {
-                  // Log console messages for debugging
-                  debugPrint(
-                    'WebView Console [${consoleMessage.messageLevel}]: ${consoleMessage.message}',
-                  );
+                  // Reduce console logging on desktop for better performance
+                  if (Platform.isAndroid || Platform.isIOS) {
+                    debugPrint(
+                      'WebView Console [${consoleMessage.messageLevel}]: ${consoleMessage.message}',
+                    );
+                  } else if (consoleMessage.messageLevel ==
+                      ConsoleMessageLevel.ERROR) {
+                    // Only log errors on desktop
+                    debugPrint(
+                      'WebView Console [ERROR]: ${consoleMessage.message}',
+                    );
+                  }
                 },
                 shouldOverrideUrlLoading: (controller, navigationAction) async {
                   final uri = navigationAction.request.url;
