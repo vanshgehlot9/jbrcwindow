@@ -3,9 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'widgets/modern_nav_bar.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Clear ALL cache and cookies when app starts - ensures fresh content
+  try {
+    await InAppWebViewController.clearAllCache();
+    final cookieManager = CookieManager.instance();
+    await cookieManager.deleteAllCookies();
+  } catch (e) {
+    debugPrint('Cache clear error: $e');
+  }
 
   if (Platform.isAndroid || Platform.isIOS) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
@@ -83,8 +93,13 @@ class _MainScreenState extends State<MainScreen> {
                         ? 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                         : null,
               ),
-              onWebViewCreated: (controller) {
+              onWebViewCreated: (controller) async {
                 _webViewController = controller;
+                // Clear ALL cache and cookies when WebView is created
+                await InAppWebViewController.clearAllCache();
+                await controller.clearHistory();
+                final cookieManager = CookieManager.instance();
+                await cookieManager.deleteAllCookies();
               },
               onLoadStart: (controller, url) {
                 if (mounted) setState(() => _isLoading = true);
@@ -167,32 +182,30 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       bottomNavigationBar:
-          !_isDesktop
-              ? BottomNavigationBar(
-                currentIndex: _currentIndex,
-                selectedItemColor: Colors.pinkAccent,
-                unselectedItemColor: Colors.grey,
-                onTap: (index) {
-                  setState(() => _currentIndex = index);
-                  _webViewController?.loadUrl(
-                    urlRequest: URLRequest(url: WebUri(_urls[index])),
-                  );
-                },
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.home),
-                    label: "Home",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.create),
-                    label: "Create",
-                  ),
-                  BottomNavigationBarItem(
-                    icon: Icon(Icons.list),
-                    label: "View",
-                  ),
-                ],
-              )
+              !_isDesktop
+              ? ModernBottomNavBar(
+                  currentIndex: _currentIndex,
+                  onTap: (index) {
+                    setState(() => _currentIndex = index);
+                    _webViewController?.loadUrl(
+                      urlRequest: URLRequest(url: WebUri(_urls[index])),
+                    );
+                  },
+                  items: [
+                    ModernNavBarItem(
+                      icon: Icons.home,
+                      label: "Home",
+                    ),
+                    ModernNavBarItem(
+                      icon: Icons.create,
+                      label: "Create",
+                    ),
+                    ModernNavBarItem(
+                      icon: Icons.list,
+                      label: "View",
+                    ),
+                  ],
+                )
               : null,
     );
   }
