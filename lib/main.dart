@@ -58,6 +58,13 @@ class _MainScreenState extends State<MainScreen> {
   bool get _isDesktop =>
       Platform.isWindows || Platform.isMacOS || Platform.isLinux;
 
+  /// Adds a cache-busting timestamp to the URL to force fresh content
+  String _cacheBustUrl(String url) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final separator = url.contains('?') ? '&' : '?';
+    return '$url${separator}_cb=$timestamp';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +72,14 @@ class _MainScreenState extends State<MainScreen> {
         child: Stack(
           children: [
             InAppWebView(
-              initialUrlRequest: URLRequest(url: WebUri(_urls[0])),
+              initialUrlRequest: URLRequest(
+                url: WebUri(_cacheBustUrl(_urls[0])),
+                headers: {
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
+                },
+              ),
               initialSettings: InAppWebViewSettings(
                 javaScriptEnabled: true,
                 domStorageEnabled: true,
@@ -182,30 +196,28 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       bottomNavigationBar:
-              !_isDesktop
+          !_isDesktop
               ? ModernBottomNavBar(
-                  currentIndex: _currentIndex,
-                  onTap: (index) {
-                    setState(() => _currentIndex = index);
-                    _webViewController?.loadUrl(
-                      urlRequest: URLRequest(url: WebUri(_urls[index])),
-                    );
-                  },
-                  items: [
-                    ModernNavBarItem(
-                      icon: Icons.home,
-                      label: "Home",
+                currentIndex: _currentIndex,
+                onTap: (index) {
+                  setState(() => _currentIndex = index);
+                  _webViewController?.loadUrl(
+                    urlRequest: URLRequest(
+                      url: WebUri(_cacheBustUrl(_urls[index])),
+                      headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                      },
                     ),
-                    ModernNavBarItem(
-                      icon: Icons.create,
-                      label: "Create",
-                    ),
-                    ModernNavBarItem(
-                      icon: Icons.list,
-                      label: "View",
-                    ),
-                  ],
-                )
+                  );
+                },
+                items: [
+                  ModernNavBarItem(icon: Icons.home_rounded, label: "Home"),
+                  ModernNavBarItem(icon: Icons.add_circle_rounded, label: "Create"),
+                  ModernNavBarItem(icon: Icons.dashboard_rounded, label: "View"),
+                ],
+              )
               : null,
     );
   }

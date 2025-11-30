@@ -21,8 +21,8 @@ class ModernBottomNavBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
-            blurRadius: 20,
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 30,
             offset: const Offset(0, 10),
           ),
         ],
@@ -41,19 +41,28 @@ class ModernBottomNavBar extends StatelessWidget {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.pinkAccent.withValues(alpha: 0.1) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(25),
+                  color: isSelected ? Colors.pinkAccent.withValues(alpha: 0.15) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.pinkAccent.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : [],
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      item.icon,
-                      color: isSelected ? Colors.pinkAccent : Colors.grey.shade600,
-                      size: 24,
-                    ),
+                      Icon(
+                        item.icon,
+                        color: isSelected ? Colors.pinkAccent : Colors.grey.shade400,
+                        size: 26,
+                      ),
                     if (isSelected) ...[
                       const SizedBox(width: 8),
                       Text(
